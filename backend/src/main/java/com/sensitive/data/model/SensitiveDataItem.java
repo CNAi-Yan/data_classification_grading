@@ -3,61 +3,27 @@ package com.sensitive.data.model;
 /**
  * 敏感数据项
  */
-public class SensitiveDataItem {
-    private String content;
-    private SensitiveDataType type;
-    private int startPosition;
-    private int endPosition;
-    private String suggestion;
+public record SensitiveDataItem(
+    String content,
+    SensitiveDataType type,
+    int startPosition,
+    int endPosition,
+    String suggestion
+) {
     
-    public SensitiveDataItem() {
-    }
-    
+    /**
+     * 构造函数，用于创建没有建议的敏感数据项
+     */
     public SensitiveDataItem(String content, SensitiveDataType type, int startPosition, int endPosition) {
-        this.content = content;
-        this.type = type;
-        this.startPosition = startPosition;
-        this.endPosition = endPosition;
+        this(content, type, startPosition, endPosition, null);
     }
     
-    // Getters and Setters
-    public String getContent() {
-        return content;
-    }
-    
-    public void setContent(String content) {
-        this.content = content;
-    }
-    
-    public SensitiveDataType getType() {
-        return type;
-    }
-    
-    public void setType(SensitiveDataType type) {
-        this.type = type;
-    }
-    
-    public int getStartPosition() {
-        return startPosition;
-    }
-    
-    public void setStartPosition(int startPosition) {
-        this.startPosition = startPosition;
-    }
-    
-    public int getEndPosition() {
-        return endPosition;
-    }
-    
-    public void setEndPosition(int endPosition) {
-        this.endPosition = endPosition;
-    }
-    
-    public String getSuggestion() {
-        return suggestion;
-    }
-    
-    public void setSuggestion(String suggestion) {
-        this.suggestion = suggestion;
+    /**
+     * 构造函数，使用默认建议
+     */
+    public SensitiveDataItem {
+        if (suggestion == null) {
+            suggestion = "建议对" + type.getName() + "进行脱敏处理";
+        }
     }
 }

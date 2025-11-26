@@ -1,5 +1,6 @@
 package com.sensitive.data.service.detector.impl;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -43,9 +44,9 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     // 性能监控器，用于记录和统计检测性能指标
     private static final PerformanceMonitor PERFORMANCE_MONITOR = new PerformanceMonitor();
     
-    // 规则刷新间隔（秒）
-    @Value("${sensitive.data.detector.rules.refresh-interval:300}")
-    private long rulesRefreshInterval;
+    // 规则刷新间隔
+    @Value("${sensitive.data.detector.rules.refresh-interval:300s}")
+    private Duration rulesRefreshInterval;
     
     // 最大规则数量
     @Value("${sensitive.data.detector.rules.max-rules:10000}")
@@ -115,8 +116,18 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
         detectUnstructuredData(text, detectedItems);
         
         // 3. 为每个检测到的项目添加处理建议
-        for (SensitiveDataItem item : detectedItems) {
-            item.setSuggestion(dataProcessorService.getProcessingSuggestion(item.getType()));
+        for (int i = 0; i < detectedItems.size(); i++) {
+            SensitiveDataItem item = detectedItems.get(i);
+            String suggestion = dataProcessorService.getProcessingSuggestion(item.type());
+            // 记录类是不可变的，需要创建新的实例
+            SensitiveDataItem updatedItem = new SensitiveDataItem(
+                item.content(),
+                item.type(),
+                item.startPosition(),
+                item.endPosition(),
+                suggestion
+            );
+            detectedItems.set(i, updatedItem);
         }
         
         long endTime = System.currentTimeMillis();
@@ -140,14 +151,14 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 批量检测敏感数据
+     * 批量检测敏感数据（使用并行流）
      * @param texts 待检测文本列表
      * @return 检测结果列表
      */
     @Override
     @Async("detectorThreadPool")
     public Mono<List<SensitiveDataDetectionResult>> detectSensitiveDataBatch(List<String> texts) {
-        List<SensitiveDataDetectionResult> results = texts.stream()
+        List<SensitiveDataDetectionResult> results = texts.parallelStream()
                 .map(this::detectSensitiveData)
                 .collect(Collectors.toList());
         return Mono.just(results);
@@ -171,9 +182,19 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
         // 只检测高风险的结构化数据
         detectHighRiskStructuredData(text, detectedItems);
         
-        // 为每个检测到的项目添加处理建议
-        for (SensitiveDataItem item : detectedItems) {
-            item.setSuggestion(dataProcessorService.getProcessingSuggestion(item.getType()));
+        // 3. 为每个检测到的项目添加处理建议
+        for (int i = 0; i < detectedItems.size(); i++) {
+            SensitiveDataItem item = detectedItems.get(i);
+            String suggestion = dataProcessorService.getProcessingSuggestion(item.type());
+            // 记录类是不可变的，需要创建新的实例
+            SensitiveDataItem updatedItem = new SensitiveDataItem(
+                item.content(),
+                item.type(),
+                item.startPosition(),
+                item.endPosition(),
+                suggestion
+            );
+            detectedItems.set(i, updatedItem);
         }
         
         long endTime = System.currentTimeMillis();
@@ -186,12 +207,12 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测结构化敏感数据
+     * 检测结构化敏感数据（使用并行流优化）
      */
     private void detectStructuredData(String text, List<SensitiveDataItem> detectedItems) {
-        // 使用顺序流处理所有敏感数据类型
+        // 使用并行流处理所有敏感数据类型，提高检测速度
         List<SensitiveDataItem> items = java.util.stream.Stream.of(SensitiveDataType.values())
-                .sequential() // 启用顺序流
+                .parallel() // 启用并行流
                 .flatMap(type -> {
                     Pattern pattern = RegexPatterns.getPattern(type);
                     if (pattern == null) {
@@ -265,7 +286,7 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测高风险结构化数据（用于实时检测）
+     * 检测高风险结构化数据（用于实时检测，使用并行流优化）
      */
     private void detectHighRiskStructuredData(String text, List<SensitiveDataItem> detectedItems) {
         // 只检测高风险类型
@@ -276,9 +297,9 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
             SensitiveDataType.PASSWORD
         };
         
-        // 使用顺序流处理高风险类型
+        // 使用并行流处理高风险类型，提高实时检测速度
         List<SensitiveDataItem> items = java.util.stream.Stream.of(highRiskTypes)
-                .sequential() // 启用顺序流
+                .parallel() // 启用并行流
                 .filter(RegexPatterns::isSupported)
                 .flatMap(type -> {
                     Pattern pattern = RegexPatterns.getPattern(type);
@@ -331,9 +352,9 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
         
         // 将匹配结果转换为SensitiveDataItem
         for (AhoCorasick.MatchResult result : matchResults) {
-            String keyword = result.getPattern();
+            String keyword = result.pattern();
             SensitiveDataType type = determineKeywordType(keyword);
-            SensitiveDataItem item = new SensitiveDataItem(keyword, type, result.getStart(), result.getEnd());
+            SensitiveDataItem item = new SensitiveDataItem(keyword, type, result.start(), result.end());
             detectedItems.add(item);
         }
     }

@@ -82,17 +82,19 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
      */
     private void createDefaultRule(String id, String name, SensitiveDataRule.RuleType type, 
             String content, SensitiveDataType sensitiveDataType, com.sensitive.data.model.RiskLevel riskLevel) {
-        SensitiveDataRule rule = new SensitiveDataRule();
-        rule.setId(id);
-        rule.setName(name);
-        rule.setType(type);
-        rule.setContent(content);
-        rule.setSensitiveDataType(sensitiveDataType);
-        rule.setRiskLevel(riskLevel);
-        rule.setStatus(SensitiveDataRule.RuleStatus.ENABLED);
-        rule.setCreatedAt(LocalDateTime.now());
-        rule.setUpdatedAt(LocalDateTime.now());
-        rule.setVersion(1);
+        LocalDateTime now = LocalDateTime.now();
+        SensitiveDataRule rule = new SensitiveDataRule(
+            id,
+            name,
+            type,
+            content,
+            sensitiveDataType,
+            riskLevel,
+            SensitiveDataRule.RuleStatus.ENABLED,
+            now,
+            now,
+            1
+        );
         
         ruleStore.put(id, rule);
     }
@@ -100,45 +102,66 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
     @Override
     public SensitiveDataRule createRule(SensitiveDataRule rule) {
         // 生成规则ID
-        if (!StringUtils.hasText(rule.getId())) {
-            rule.setId(generateRuleId(rule));
-        }
+        String id = StringUtils.hasText(rule.id()) ? rule.id() : generateRuleId(rule);
         
         // 设置默认值
         LocalDateTime now = LocalDateTime.now();
-        rule.setCreatedAt(now);
-        rule.setUpdatedAt(now);
-        rule.setVersion(1);
+        
+        // 创建新的规则实例
+        SensitiveDataRule newRule = new SensitiveDataRule(
+            id,
+            rule.name(),
+            rule.type(),
+            rule.content(),
+            rule.sensitiveDataType(),
+            rule.riskLevel(),
+            rule.status(),
+            now,
+            now,
+            1
+        );
         
         // 保存规则
-        ruleStore.put(rule.getId(), rule);
+        ruleStore.put(id, newRule);
         
         // 刷新检测服务规则
         refreshDetectorRules();
         
-        return rule;
+        return newRule;
     }
     
     @Override
     public SensitiveDataRule updateRule(SensitiveDataRule rule) {
         // 检查规则是否存在
-        if (!ruleStore.containsKey(rule.getId())) {
-            throw new IllegalArgumentException("Rule not found: " + rule.getId());
+        if (!ruleStore.containsKey(rule.id())) {
+            throw new IllegalArgumentException("Rule not found: " + rule.id());
         }
         
         // 更新规则
-        SensitiveDataRule existingRule = ruleStore.get(rule.getId());
-        rule.setCreatedAt(existingRule.getCreatedAt());
-        rule.setUpdatedAt(LocalDateTime.now());
-        rule.setVersion(existingRule.getVersion() + 1);
+        SensitiveDataRule existingRule = ruleStore.get(rule.id());
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 创建新的规则实例
+        SensitiveDataRule updatedRule = new SensitiveDataRule(
+            rule.id(),
+            rule.name(),
+            rule.type(),
+            rule.content(),
+            rule.sensitiveDataType(),
+            rule.riskLevel(),
+            rule.status(),
+            existingRule.createdAt(),
+            now,
+            existingRule.version() + 1
+        );
         
         // 保存规则
-        ruleStore.put(rule.getId(), rule);
+        ruleStore.put(rule.id(), updatedRule);
         
         // 刷新检测服务规则
         refreshDetectorRules();
         
-        return rule;
+        return updatedRule;
     }
     
     @Override
@@ -163,21 +186,21 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
     @Override
     public List<SensitiveDataRule> getRulesByType(SensitiveDataRule.RuleType type) {
         return ruleStore.values().stream()
-                .filter(rule -> rule.getType() == type)
+                .filter(rule -> rule.type() == type)
                 .collect(Collectors.toList());
     }
     
     @Override
     public List<SensitiveDataRule> getRulesBySensitiveDataType(SensitiveDataType sensitiveDataType) {
         return ruleStore.values().stream()
-                .filter(rule -> rule.getSensitiveDataType() == sensitiveDataType)
+                .filter(rule -> rule.sensitiveDataType() == sensitiveDataType)
                 .collect(Collectors.toList());
     }
     
     @Override
     public List<SensitiveDataRule> getRulesByStatus(SensitiveDataRule.RuleStatus status) {
         return ruleStore.values().stream()
-                .filter(rule -> rule.getStatus() == status)
+                .filter(rule -> rule.status() == status)
                 .collect(Collectors.toList());
     }
     
@@ -190,16 +213,27 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
         }
         
         // 启用规则
-        rule.setStatus(SensitiveDataRule.RuleStatus.ENABLED);
-        rule.setUpdatedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        SensitiveDataRule updatedRule = new SensitiveDataRule(
+            rule.id(),
+            rule.name(),
+            rule.type(),
+            rule.content(),
+            rule.sensitiveDataType(),
+            rule.riskLevel(),
+            SensitiveDataRule.RuleStatus.ENABLED,
+            rule.createdAt(),
+            now,
+            rule.version()
+        );
         
         // 保存规则
-        ruleStore.put(id, rule);
+        ruleStore.put(id, updatedRule);
         
         // 刷新检测服务规则
         refreshDetectorRules();
         
-        return rule;
+        return updatedRule;
     }
     
     @Override
@@ -211,16 +245,27 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
         }
         
         // 禁用规则
-        rule.setStatus(SensitiveDataRule.RuleStatus.DISABLED);
-        rule.setUpdatedAt(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        SensitiveDataRule updatedRule = new SensitiveDataRule(
+            rule.id(),
+            rule.name(),
+            rule.type(),
+            rule.content(),
+            rule.sensitiveDataType(),
+            rule.riskLevel(),
+            SensitiveDataRule.RuleStatus.DISABLED,
+            rule.createdAt(),
+            now,
+            rule.version()
+        );
         
         // 保存规则
-        ruleStore.put(id, rule);
+        ruleStore.put(id, updatedRule);
         
         // 刷新检测服务规则
         refreshDetectorRules();
         
-        return rule;
+        return updatedRule;
     }
     
     @Override
@@ -228,7 +273,7 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
         List<SensitiveDataRule> updatedRules = new ArrayList<>();
         
         for (SensitiveDataRule rule : rules) {
-            if (ruleStore.containsKey(rule.getId())) {
+            if (ruleStore.containsKey(rule.id())) {
                 // 更新现有规则
                 updatedRules.add(updateRule(rule));
             } else {
@@ -252,18 +297,18 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
     @Override
     public List<String> getAllEnabledKeywords() {
         return ruleStore.values().stream()
-                .filter(rule -> rule.getType() == SensitiveDataRule.RuleType.KEYWORD)
-                .filter(rule -> rule.getStatus() == SensitiveDataRule.RuleStatus.ENABLED)
-                .map(SensitiveDataRule::getContent)
+                .filter(rule -> rule.type() == SensitiveDataRule.RuleType.KEYWORD)
+                .filter(rule -> rule.status() == SensitiveDataRule.RuleStatus.ENABLED)
+                .map(rule -> rule.content())
                 .collect(Collectors.toList());
     }
     
     @Override
     public List<String> getAllEnabledRegexPatterns() {
         return ruleStore.values().stream()
-                .filter(rule -> rule.getType() == SensitiveDataRule.RuleType.REGEX)
-                .filter(rule -> rule.getStatus() == SensitiveDataRule.RuleStatus.ENABLED)
-                .map(SensitiveDataRule::getContent)
+                .filter(rule -> rule.type() == SensitiveDataRule.RuleType.REGEX)
+                .filter(rule -> rule.status() == SensitiveDataRule.RuleStatus.ENABLED)
+                .map(rule -> rule.content())
                 .collect(Collectors.toList());
     }
     
@@ -273,7 +318,7 @@ public class SensitiveDataRuleServiceImpl implements SensitiveDataRuleService {
      * @return 规则ID
      */
     private String generateRuleId(SensitiveDataRule rule) {
-        String prefix = rule.getSensitiveDataType().name() + "_" + rule.getType().name() + "_";
+        String prefix = rule.sensitiveDataType().name() + "_" + rule.type().name() + "_";
         String timestamp = String.valueOf(System.currentTimeMillis());
         return prefix + timestamp;
     }

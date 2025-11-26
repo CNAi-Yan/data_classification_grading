@@ -5,57 +5,30 @@ import java.time.LocalDateTime;
 /**
  * 敏感数据规则模型
  */
-public class SensitiveDataRule {
+public record SensitiveDataRule(
+    String id,
+    String name,
+    RuleType type,
+    String content,
+    SensitiveDataType sensitiveDataType,
+    RiskLevel riskLevel,
+    RuleStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
+    int version
+) {
     
     /**
-     * 规则ID
+     * 构造函数，自动生成创建和更新时间
      */
-    private String id;
-    
-    /**
-     * 规则名称
-     */
-    private String name;
-    
-    /**
-     * 规则类型
-     */
-    private RuleType type;
-    
-    /**
-     * 规则内容
-     */
-    private String content;
-    
-    /**
-     * 敏感数据类型
-     */
-    private SensitiveDataType sensitiveDataType;
-    
-    /**
-     * 风险等级
-     */
-    private RiskLevel riskLevel;
-    
-    /**
-     * 规则状态
-     */
-    private RuleStatus status;
-    
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createdAt;
-    
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updatedAt;
-    
-    /**
-     * 规则版本
-     */
-    private int version;
+    public SensitiveDataRule {
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
     
     /**
      * 规则类型枚举
@@ -95,102 +68,5 @@ public class SensitiveDataRule {
          * 待审核
          */
         PENDING
-    }
-    
-    // Getters and Setters
-    public String getId() {
-        return id;
-    }
-    
-    public void setId(String id) {
-        this.id = id;
-    }
-    
-    public String getName() {
-        return name;
-    }
-    
-    public void setName(String name) {
-        this.name = name;
-    }
-    
-    public RuleType getType() {
-        return type;
-    }
-    
-    public void setType(RuleType type) {
-        this.type = type;
-    }
-    
-    public String getContent() {
-        return content;
-    }
-    
-    public void setContent(String content) {
-        this.content = content;
-    }
-    
-    public SensitiveDataType getSensitiveDataType() {
-        return sensitiveDataType;
-    }
-    
-    public void setSensitiveDataType(SensitiveDataType sensitiveDataType) {
-        this.sensitiveDataType = sensitiveDataType;
-    }
-    
-    public RiskLevel getRiskLevel() {
-        return riskLevel;
-    }
-    
-    public void setRiskLevel(RiskLevel riskLevel) {
-        this.riskLevel = riskLevel;
-    }
-    
-    public RuleStatus getStatus() {
-        return status;
-    }
-    
-    public void setStatus(RuleStatus status) {
-        this.status = status;
-    }
-    
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-    
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-    
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
-    
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-    
-    public int getVersion() {
-        return version;
-    }
-    
-    public void setVersion(int version) {
-        this.version = version;
-    }
-    
-    @Override
-    public String toString() {
-        return "SensitiveDataRule{" +
-                "id='" + id + '\'' +
-                ", name='" + name + '\'' +
-                ", type=" + type +
-                ", content='" + content + '\'' +
-                ", sensitiveDataType=" + sensitiveDataType +
-                ", riskLevel=" + riskLevel +
-                ", status=" + status +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", version=" + version +
-                '}';
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -24,7 +25,7 @@ public class DetectorConfig {
     private int queueCapacity;
 
     @Value("${sensitive.data.detector.thread-pool.keep-alive-time:60s}")
-    private int keepAliveTime;
+    private Duration keepAliveTime;
 
     /**
      * 配置检测服务线程池
@@ -36,7 +37,7 @@ public class DetectorConfig {
         executor.setCorePoolSize(corePoolSize);
         executor.setMaxPoolSize(maxPoolSize);
         executor.setQueueCapacity(queueCapacity);
-        executor.setKeepAliveSeconds(keepAliveTime);
+        executor.setKeepAliveSeconds((int) keepAliveTime.getSeconds());
         executor.setThreadNamePrefix("Detector-Thread-");
         
         // 拒绝策略：当线程池满时，由调用线程处理

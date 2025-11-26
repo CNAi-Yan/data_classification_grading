@@ -17,6 +17,8 @@ import com.sensitive.data.model.SensitiveDataType;
 import com.sensitive.data.service.detector.SensitiveDataDetectorService;
 import com.sensitive.data.service.processor.SensitiveDataProcessorService;
 
+import reactor.core.publisher.Mono;
+
 /**
  * 敏感数据检测REST API控制器
  */
@@ -40,6 +42,22 @@ public class SensitiveDataController {
     @PostMapping("/text")
     public SensitiveDataDetectionResult detectText(@RequestBody String text) {
         return detectorService.detectSensitiveData(text);
+    }
+    
+    /**
+     * 异步检测文本中的敏感数据
+     */
+    @PostMapping("/text/async")
+    public Mono<SensitiveDataDetectionResult> detectTextAsync(@RequestBody String text) {
+        return detectorService.detectSensitiveDataAsync(text);
+    }
+    
+    /**
+     * 批量检测文本中的敏感数据
+     */
+    @PostMapping("/text/batch")
+    public Mono<List<SensitiveDataDetectionResult>> detectTextBatch(@RequestBody List<String> texts) {
+        return detectorService.detectSensitiveDataBatch(texts);
     }
     
     /**

@@ -18,39 +18,52 @@ public class RegexPatterns {
         // 15位：[1-9]\d{5}\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}
         // 18位：[1-9]\d{5}(19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]
         PATTERNS.put(SensitiveDataType.ID_CARD, 
-                Pattern.compile("\\b(([1-9]\\d{5}(19|20)\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx])|([1-9]\\d{5}\\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])\\d{3}))\\b"));
+                Pattern.compile("(?:^|[^\\d])([1-9]\\d{5}(?:19|20)\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])\\d{3}[\\dXx]|[1-9]\\d{5}\\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\\d|3[01])\\d{3})(?:[^\\d]|$)"));
         
         // 护照号：字母开头，后跟8位数字
         PATTERNS.put(SensitiveDataType.PASSPORT, 
-                Pattern.compile("\\b[A-Za-z][0-9]{8}\\b"));
+                Pattern.compile("[A-Za-z][0-9]{8}"));
         
         // 手机号：11位数字，以1开头，第二位为3-9
         PATTERNS.put(SensitiveDataType.PHONE_NUMBER, 
-                Pattern.compile("\\b1[3-9]\\d{9}\\b"));
+                Pattern.compile("1[3-9]\\d{9}"));
         
         // 邮箱：标准邮箱格式，支持更严格的域名验证
         PATTERNS.put(SensitiveDataType.EMAIL, 
-                Pattern.compile("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}\\b", Pattern.CASE_INSENSITIVE));
+                Pattern.compile("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}", Pattern.CASE_INSENSITIVE));
         
-        // 银行卡号：16-19位数字，支持更多卡种前缀
+        // 银行卡号：13-19位数字，支持带空格或连字符的格式，降低误报
+        // 匹配规则：
+        // 1. 13-19位数字
+        // 2. 支持每4位加空格或连字符的格式
+        // 3. 支持连续数字格式
+        // 注意：正则表达式顺序很重要，先匹配更长的格式，再匹配较短的格式
         PATTERNS.put(SensitiveDataType.BANK_CARD, 
-                Pattern.compile("\\b[1-9]\\d{15,18}\\b"));
+                Pattern.compile("(?<!\\d)(?:(?:\\d{4}[ -]?){5}|(?:\\d{4}[ -]?){4}\\d{1,3}|(?:\\d{4}[ -]?){3}\\d{1,7}|\\d{13,19})(?!\\d)"));
         
-        // 信用卡号：16位数字，以4、5、6开头
+        
+        // 信用卡号：16位数字，支持带空格或连字符的格式，降低误报
+        // 匹配规则：
+        // 1. 16位数字
+        // 2. 支持每4位加空格或连字符的格式
+        // 3. 支持连续数字格式
         PATTERNS.put(SensitiveDataType.CREDIT_CARD, 
-                Pattern.compile("\\b[4-6]\\d{15}\\b"));
+                Pattern.compile("\\b(?:[0-9]{4}[ -]?){3}[0-9]{4}|[0-9]{16}\\b"));
         
-        // 密码：包含至少6位字符，至少一个字母和一个数字
+        
+        // Password: match only after keywords, use simple regex to ensure matching
         PATTERNS.put(SensitiveDataType.PASSWORD, 
-                Pattern.compile("(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{6,}\\b"));
+                Pattern.compile("(?i)(密码|password)[：: ]+(\\\\w{6,20})"));
+
+
         
         // 驾照号：17位数字和字母组合
         PATTERNS.put(SensitiveDataType.DRIVER_LICENSE, 
                 Pattern.compile("\\b[A-Za-z0-9]{17}\\b"));
         
-        // 银行账号：支持16-25位数字
+        // 银行账号：支持多种格式，包含字母和数字，长度16-22位
         PATTERNS.put(SensitiveDataType.BANK_ACCOUNT, 
-                Pattern.compile("\\b[1-9]\\d{15,24}\\b"));
+                Pattern.compile("(?:^|[^\\w])([A-Za-z0-9][A-Za-z0-9- ]{14,20}[A-Za-z0-9])(?:[^\\w]|$)", Pattern.CASE_INSENSITIVE));
         
         // 用户名：字母开头，允许字母、数字、下划线，长度4-20
         PATTERNS.put(SensitiveDataType.USERNAME, 

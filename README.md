@@ -1,0 +1,2 @@
+# data_classification_grading
+一个基于Java Spring Boot和Vue的敏感数据识别应用，能够快速识别文本中的敏感信息并提供处理建议。

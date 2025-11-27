@@ -221,7 +221,7 @@ public class AhoCorasick {
     }
     
     /**
-     * 批量匹配文本，返回所有匹配结果
+     * 批量匹配文本，返回所有匹配结果（使用并行流优化）
      * 
      * @param texts 要匹配的文本列表
      * @return 匹配结果列表，每个元素包含文本索引和对应的匹配结果
@@ -231,15 +231,15 @@ public class AhoCorasick {
             return Collections.emptyList();
         }
         
-        List<BatchMatchResult> batchResults = new ArrayList<>(texts.size());
-        
-        for (int i = 0; i < texts.size(); i++) {
-            String text = texts.get(i);
-            List<MatchResult> results = match(text);
-            batchResults.add(new BatchMatchResult(i, results));
-        }
-        
-        return batchResults;
+        // 使用并行流处理批量匹配，提高性能
+        return texts.parallelStream()
+                .map(text -> {
+                    int index = texts.indexOf(text);
+                    List<MatchResult> results = match(text);
+                    return new BatchMatchResult(index, results);
+                })
+                .sorted((a, b) -> Integer.compare(a.textIndex(), b.textIndex()))
+                .collect(java.util.stream.Collectors.toList());
     }
     
     /**
@@ -252,34 +252,9 @@ public class AhoCorasick {
     }
     
     /**
-     * 匹配结果类
+     * 匹配结果记录类
      */
-    public static class MatchResult {
-        // 匹配的模式串
-        private final String pattern;
-        // 匹配的起始位置（包含）
-        private final int start;
-        // 匹配的结束位置（不包含）
-        private final int end;
-        
-        public MatchResult(String pattern, int start, int end) {
-            this.pattern = pattern;
-            this.start = start;
-            this.end = end;
-        }
-        
-        public String getPattern() {
-            return pattern;
-        }
-        
-        public int getStart() {
-            return start;
-        }
-        
-        public int getEnd() {
-            return end;
-        }
-        
+    public record MatchResult(String pattern, int start, int end) {
         @Override
         public String toString() {
             return "MatchResult{pattern='" + pattern + "', start=" + start + ", end=" + end + "}";
@@ -287,27 +262,9 @@ public class AhoCorasick {
     }
     
     /**
-     * 批量匹配结果类
+     * 批量匹配结果记录类
      */
-    public static class BatchMatchResult {
-        // 文本索引
-        private final int textIndex;
-        // 匹配结果列表
-        private final List<MatchResult> matchResults;
-        
-        public BatchMatchResult(int textIndex, List<MatchResult> matchResults) {
-            this.textIndex = textIndex;
-            this.matchResults = matchResults;
-        }
-        
-        public int getTextIndex() {
-            return textIndex;
-        }
-        
-        public List<MatchResult> getMatchResults() {
-            return matchResults;
-        }
-        
+    public record BatchMatchResult(int textIndex, List<MatchResult> matchResults) {
         @Override
         public String toString() {
             return "BatchMatchResult{textIndex=" + textIndex + ", matchResults=" + matchResults + "}";

@@ -26,21 +26,27 @@ public class SensitiveDataResultServiceImpl implements SensitiveDataResultServic
     @Override
     public SensitiveDataDetectionResult saveResult(SensitiveDataDetectionResult result) {
         // 生成结果ID
-        if (result.getId() == null) {
-            result.setId(generateResultId(result));
-        }
+        String id = result.id() != null ? result.id() : generateResultId(result);
         
         // 设置时间戳
         LocalDateTime now = LocalDateTime.now();
-        if (result.getCreatedAt() == null) {
-            result.setCreatedAt(now);
-        }
-        result.setUpdatedAt(now);
+        LocalDateTime createdAt = result.createdAt() != null ? result.createdAt() : now;
+        
+        // 记录类是不可变的，需要创建新的实例
+        SensitiveDataDetectionResult updatedResult = new SensitiveDataDetectionResult(
+            id,
+            result.originalText(),
+            result.detectedItems(),
+            result.totalDetected(),
+            result.processingTimeMs(),
+            createdAt,
+            now
+        );
         
         // 保存结果
-        resultStore.put(result.getId(), result);
+        resultStore.put(id, updatedResult);
         
-        return result;
+        return updatedResult;
     }
     
     @Override
@@ -67,23 +73,23 @@ public class SensitiveDataResultServiceImpl implements SensitiveDataResultServic
     @Override
     public List<SensitiveDataDetectionResult> getResultsByTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
         return resultStore.values().stream()
-                .filter(result -> result.getCreatedAt().isAfter(startTime) && result.getCreatedAt().isBefore(endTime))
+                .filter(result -> result.createdAt().isAfter(startTime) && result.createdAt().isBefore(endTime))
                 .collect(Collectors.toList());
     }
     
     @Override
     public List<SensitiveDataDetectionResult> getResultsBySensitiveDataType(SensitiveDataType type) {
         return resultStore.values().stream()
-                .filter(result -> result.getDetectedItems() != null)
-                .filter(result -> result.getDetectedItems().stream()
-                        .anyMatch(item -> item.getType() == type))
+                .filter(result -> result.detectedItems() != null)
+                .filter(result -> result.detectedItems().stream()
+                        .anyMatch(item -> item.type() == type))
                 .collect(Collectors.toList());
     }
     
     @Override
     public List<SensitiveDataDetectionResult> getResultsBySensitiveCount(int minCount, int maxCount) {
         return resultStore.values().stream()
-                .filter(result -> result.getTotalDetected() >= minCount && result.getTotalDetected() <= maxCount)
+                .filter(result -> result.totalDetected() >= minCount && result.totalDetected() <= maxCount)
                 .collect(Collectors.toList());
     }
     

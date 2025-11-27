@@ -1,6 +1,6 @@
 package com.sensitive.data.config;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
@@ -21,9 +21,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 @EnableCaching
 public class CacheConfig {
     
-    // 本地缓存过期时间（秒）
-    @Value("${sensitive.data.detector.cache.ttl:3600}")
-    private long localCacheTtl;
+    // 本地缓存过期时间
+    @Value("${sensitive.data.detector.cache.ttl:3600s}")
+    private Duration localCacheTtl;
     
     // 本地缓存最大大小
     @Value("${sensitive.data.detector.cache.max-size:100000}")
@@ -42,7 +42,7 @@ public class CacheConfig {
     public CacheManager caffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager();
         cacheManager.setCaffeine(Caffeine.newBuilder()
-                .expireAfterWrite(localCacheTtl, TimeUnit.SECONDS)
+                .expireAfterWrite(localCacheTtl)
                 .maximumSize(localCacheMaxSize)
                 .recordStats());
         return cacheManager;

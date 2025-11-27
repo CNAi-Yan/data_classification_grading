@@ -1,6 +1,7 @@
 package com.sensitive.data.service.detector.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -189,8 +190,25 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
      * 检测结构化敏感数据
      */
     private void detectStructuredData(String text, List<SensitiveDataItem> detectedItems) {
-        // 使用顺序流处理所有敏感数据类型
-        List<SensitiveDataItem> items = java.util.stream.Stream.of(SensitiveDataType.values())
+        // 定义检测顺序，按照类型的特异性和典型长度排序，确保更具体的类型优先检测
+        // 1. 优先检测更具体的类型（如身份证号、银行卡号）
+        // 2. 然后检测较通用的类型（如银行账号）
+        // 3. 最后检测其他类型
+        List<SensitiveDataType> detectionOrder = new ArrayList<>(Arrays.asList(
+            SensitiveDataType.ID_CARD,        // 15或18位，最具体的个人身份信息
+            SensitiveDataType.CREDIT_CARD,    // 16位，具体的金融信息，优先检测
+            SensitiveDataType.BANK_CARD,      // 13-19位，具体的金融信息
+            SensitiveDataType.DRIVER_LICENSE, // 17位，具体的个人身份信息
+            SensitiveDataType.PHONE_NUMBER,   // 11位，具体的联系方式
+            SensitiveDataType.PASSPORT,       // 9位，具体的个人身份信息
+            SensitiveDataType.EMAIL,          // 不确定，但通常较长，具体的联系方式
+            SensitiveDataType.USERNAME,       // 4-20位，具体的账号信息
+            SensitiveDataType.PASSWORD,       // 6-20位，具体的账号信息
+            SensitiveDataType.BANK_ACCOUNT    // 16-22位，较通用的金融信息，放在最后检测
+        ));
+        
+        // 使用顺序流处理所有敏感数据类型，按照自定义顺序
+        List<SensitiveDataItem> items = detectionOrder.stream()
                 .sequential() // 启用顺序流
                 .flatMap(type -> {
                     Pattern pattern = RegexPatterns.getPattern(type);
@@ -261,6 +279,7 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
                 })
                 .collect(Collectors.toList());
         
+        // 保留所有检测结果，允许同一个敏感数据命中多个标签
         detectedItems.addAll(items);
     }
     

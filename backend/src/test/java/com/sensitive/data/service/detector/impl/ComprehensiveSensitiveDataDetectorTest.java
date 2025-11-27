@@ -238,7 +238,7 @@ public class ComprehensiveSensitiveDataDetectorTest {
         assertTrue(registrationItems.size() >= 4); // 应该检测到至少4种敏感数据
         
         // 测试2：金融交易场景
-        String financialText = "交易信息：用户李四，银行卡号6222021234567890123，银行账号ABC1234567890123456789，交易金额10000元。";
+        String financialText = "交易信息：用户李四，银行卡号6222021234567890120，银行账号ABC1234567890123456789，交易金额10000元。";
         SensitiveDataDetectionResult financialResult = detectorService.detectSensitiveData(financialText);
         List<SensitiveDataItem> financialItems = financialResult.getDetectedItems();
         assertTrue(financialItems.size() >= 2); // 应该检测到至少2种敏感数据

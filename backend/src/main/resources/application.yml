@@ -1,137 +1,16 @@
+# 主配置文件
 spring:
+  # 应用名称
   application:
     name: sensitive-data-detector
   
-  # Kafka配置
-  kafka:
-    bootstrap-servers: localhost:9092
-    consumer:
-      group-id: sensitive-data-detector-group
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: 1
-  
-  # Redis配置
-  redis:
-    host: localhost
-    port: 6379
-    database: 0
-    timeout: 5000ms
-    lettuce:
-      pool:
-        max-active: 100
-        max-idle: 10
-        min-idle: 5
-        max-wait: -1ms
-  
-  # 缓存配置
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=10000,expireAfterWrite=10m
-  
-  # 服务注册与发现配置
+  # 配置中心设置 - 默认禁用，使用本地配置
   cloud:
-    consul:
-      host: localhost
-      port: 8500
-      discovery:
-        service-name: ${spring.application.name}
-        heartbeat:
-          enabled: true
     config:
       enabled: false
-    gateway:
-      enabled: false
-  
-  # 数据库配置
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: password
-  
-  # JPA配置
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+      import: "optional:configserver:"
+      import-check:
+        enabled: false
 
-# 服务端口
-server:
-  port: 8080
-
-# 网关配置
-spring.cloud.gateway:
-  routes:
-    - id: sensitive-data-detector
-      uri: lb://sensitive-data-detector
-      predicates:
-        - Path=/api/**
-      filters:
-        - StripPrefix=1
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 5000
-            redis-rate-limiter.burstCapacity: 10000
-
-# 限流配置
-resilience4j:
-  ratelimiter:
-    instances:
-      sensitiveDataDetector:
-        limitForPeriod: 5000
-        limitRefreshPeriod: 1s
-        timeoutDuration: 500ms
-  
-  circuitbreaker:
-    instances:
-      sensitiveDataDetector:
-        registerHealthIndicator: true
-        slidingWindowSize: 100
-        minimumNumberOfCalls: 10
-        permittedNumberOfCallsInHalfOpenState: 5
-        automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s
-        failureRateThreshold: 50
-
-# 性能监控配置
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,metrics,prometheus
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  endpoint:
-    health:
-      show-details: always
-
-# 应用配置
-sensitive:
-  data:
-    detector:
-      # 检测线程池配置
-      thread-pool:
-        core-size: 10
-        max-size: 50
-        queue-capacity: 1000
-        keep-alive-time: 60s
-      
-      # 规则配置
-      rules:
-        refresh-interval: 300s
-        max-rules: 10000
-      
-      # 缓存配置
-      cache:
-        enabled: true
-        ttl: 3600s
-        max-size: 100000
+# 激活的配置文件 - 默认使用开发环境
+spring.profiles.active: dev

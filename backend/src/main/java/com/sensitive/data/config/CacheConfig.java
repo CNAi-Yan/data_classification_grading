@@ -15,7 +15,7 @@ import org.springframework.data.redis.connection.RedisConnectionFactory;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
 /**
- * 缓存配置类，配置多级缓存
+ * 缓存配置类，配置多级缓存（本地缓存 + Redis分布式缓存）
  */
 @Configuration
 @EnableCaching
@@ -34,7 +34,7 @@ public class CacheConfig {
     private long redisCacheTtl;
     
     /**
-     * 配置Caffeine本地缓存
+     * 配置Caffeine本地缓存（一级缓存）
      * @return Caffeine缓存管理器
      */
     @Bean
@@ -49,7 +49,7 @@ public class CacheConfig {
     }
     
     /**
-     * 配置Redis分布式缓存
+     * 配置Redis分布式缓存（二级缓存）
      * @param connectionFactory Redis连接工厂
      * @return Redis缓存管理器
      */

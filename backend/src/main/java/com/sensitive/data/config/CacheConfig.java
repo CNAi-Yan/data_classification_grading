@@ -34,8 +34,9 @@ public class CacheConfig {
     private long redisCacheTtl;
     
     /**
-     * 配置Caffeine本地缓存
-     * @return Caffeine缓存管理器
+     * 创建并配置一个用于本地缓存的 Caffeine CacheManager。
+     *
+     * @return 已配置的 Caffeine CacheManager，包含过期策略（基于 localCacheTtl）和最大容量限制（localCacheMaxSize），并开启统计信息记录
      */
     @Bean
     @Primary

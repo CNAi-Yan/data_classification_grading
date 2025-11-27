@@ -174,10 +174,12 @@ public class AhoCorasick {
     }
     
     /**
-     * 匹配文本，返回所有匹配结果
-     * 
-     * @param text 要匹配的文本
-     * @return 匹配结果列表，每个元素包含匹配的模式串和结束位置
+     * 在给定文本中查找所有已注册模式的匹配位置。
+     *
+     * 如果输入为 null 或空串，或当前未注册任何模式，则返回空列表。
+     *
+     * @param text 要搜索的文本
+     * @return 返回一个 {@code List<MatchResult>}，按文本扫描顺序包含所有匹配；每个 MatchResult 包含匹配的模式串、起始索引（包含）和结束索引（不包含）
      */
     public List<MatchResult> match(String text) {
         if (text == null || text.isEmpty() || patternCount == 0) {
@@ -221,10 +223,10 @@ public class AhoCorasick {
     }
     
     /**
-     * 批量匹配文本，返回所有匹配结果（使用并行流优化）
-     * 
-     * @param texts 要匹配的文本列表
-     * @return 匹配结果列表，每个元素包含文本索引和对应的匹配结果
+     * 批量对输入文本列表进行模式匹配，并按输入顺序返回每个文本的匹配结果。
+     *
+     * @param texts 要匹配的文本列表；为 null 或空时返回空列表
+     * @return 按输入列表顺序排列的匹配结果列表，每项包含文本在输入列表中的索引及该文本的所有匹配项
      */
     public List<BatchMatchResult> matchBatch(List<String> texts) {
         if (texts == null || texts.isEmpty() || patternCount == 0) {
@@ -255,6 +257,11 @@ public class AhoCorasick {
      * 匹配结果记录类
      */
     public record MatchResult(String pattern, int start, int end) {
+        /**
+         * 提供 MatchResult 的可读字符串表示。
+         *
+         * @return 格式为 `MatchResult{pattern='...', start=..., end=...}` 的字符串，其中 `end` 表示结束位置的开区间索引（即不包含该索引处字符）。
+         */
         @Override
         public String toString() {
             return "MatchResult{pattern='" + pattern + "', start=" + start + ", end=" + end + "}";
@@ -265,6 +272,12 @@ public class AhoCorasick {
      * 批量匹配结果记录类
      */
     public record BatchMatchResult(int textIndex, List<MatchResult> matchResults) {
+        /**
+         * 提供 BatchMatchResult 的可读字符串表示，包含文本索引和匹配结果。
+         *
+         * @return 包含 `textIndex` 和 `matchResults` 的字符串表示，格式为
+         *         "BatchMatchResult{textIndex=<index>, matchResults=<matchResults>}"。
+         */
         @Override
         public String toString() {
             return "BatchMatchResult{textIndex=" + textIndex + ", matchResults=" + matchResults + "}";

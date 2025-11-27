@@ -12,7 +12,12 @@ public record SensitiveDataItem(
 ) {
     
     /**
-     * 构造函数，用于创建没有建议的敏感数据项
+     * 创建一个不带建议的敏感数据项实例。
+     *
+     * @param content 敏感数据的原文
+     * @param type 敏感数据的类型
+     * @param startPosition 在原始文本中的起始索引
+     * @param endPosition 在原始文本中的结束索引
      */
     public SensitiveDataItem(String content, SensitiveDataType type, int startPosition, int endPosition) {
         this(content, type, startPosition, endPosition, null);

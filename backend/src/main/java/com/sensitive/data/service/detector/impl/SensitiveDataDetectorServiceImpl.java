@@ -95,9 +95,10 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测敏感数据（同步方法）
-     * @param text 待检测文本
-     * @return 检测结果
+     * 对输入文本执行全面的敏感数据检测并返回检测结果。
+     *
+     * @param text 待检测的输入文本；当为 null 或仅包含空白字符时返回空检测结果
+     * @return 包含原始文本、检测到的敏感数据项列表以及处理耗时（毫秒）的检测结果
      */
     @Override
     @Cacheable(value = "sensitiveDataDetection", key = "#text", unless = "#result == null")
@@ -140,10 +141,11 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 异步检测敏感数据
-     * @param text 待检测文本
-     * @return 异步检测结果
-     */
+         * 触发对给定文本的敏感数据检测并提供检测结果。
+         *
+         * @param text 待检测文本
+         * @return 检测到的敏感数据及处理建议的 SensitiveDataDetectionResult
+         */
     @Override
     @Async("detectorThreadPool")
     public Mono<SensitiveDataDetectionResult> detectSensitiveDataAsync(String text) {
@@ -165,9 +167,10 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 实时检测敏感数据
-     * @param text 待检测文本
-     * @return 检测结果
+     * 对输入文本执行实时敏感数据检测并返回检测结果。
+     *
+     * @param text 待检测的文本；如果为 null 或仅包含空白字符，返回一个包含空项列表且处理耗时为 0 的结果。
+     * @return 包含原始文本、检测到的敏感数据项列表以及处理耗时（毫秒）的检测结果。
      */
     @Override
     public SensitiveDataDetectionResult detectSensitiveDataRealtime(String text) {
@@ -207,7 +210,16 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测结构化敏感数据（使用并行流优化）
+     * 在给定文本中检测结构化敏感数据并将发现的条目追加到提供的列表中。
+     *
+     * <p>对身份证、银行卡/信用卡、银行账号和密码等结构化类型执行类型特定的提取与校验：
+     * - 对身份证使用捕获组提取并进行身份证号校验；
+     * - 对银行卡和信用卡应用 Luhn 校验；
+     * - 对银行账号和密码使用捕获组提取。
+     * 合格的匹配将作为 SensitiveDataItem 添加到 detectedItems 中。</p>
+     *
+     * @param text 待检测的文本
+     * @param detectedItems 用于收集检测结果的列表；符合条件的敏感数据条目会被追加到此列表
      */
     private void detectStructuredData(String text, List<SensitiveDataItem> detectedItems) {
         // 使用并行流处理所有敏感数据类型，提高检测速度
@@ -286,7 +298,12 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测高风险结构化数据（用于实时检测，使用并行流优化）
+     * 检测文本中的高风险结构化敏感数据并将发现的项添加到提供的列表中。
+     *
+     * <p>仅识别高风险类型：身份证、银行卡、信用卡和密码。对银行卡与信用卡应用 Luhn 校验；对密码尝试使用第一个捕获组提取实际密码内容（若不存在则跳过匹配）。</p>
+     *
+     * @param text 待检测的文本
+     * @param detectedItems 用于接收检测到的敏感数据项的列表（方法会将新的 SensitiveDataItem 添加到此列表中）
      */
     private void detectHighRiskStructuredData(String text, List<SensitiveDataItem> detectedItems) {
         // 只检测高风险类型
@@ -344,8 +361,11 @@ public class SensitiveDataDetectorServiceImpl implements SensitiveDataDetectorSe
     }
     
     /**
-     * 检测非结构化敏感数据（使用Aho-Corasick算法优化）
-     */
+         * 在给定文本中检测基于关键字的非结构化敏感数据，并将检测到的条目追加到传入的结果列表中。
+         *
+         * @param text          待检测的文本
+         * @param detectedItems 用于接收检测结果的列表；检测到的每个敏感项将以新的 SensitiveDataItem 追加到此列表中
+         */
     private void detectUnstructuredData(String text, List<SensitiveDataItem> detectedItems) {
         // 使用Aho-Corasick算法进行高效的多模式匹配
         List<AhoCorasick.MatchResult> matchResults = ahoCorasick.match(text);
